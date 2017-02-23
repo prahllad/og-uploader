@@ -69,12 +69,9 @@ module.exports = {
                     console.log('Error due to upload', err);
                     res.send(err);
                 } else {
-                    let data = {
-                        'fileName': actualName,
-                        'fileType': fileType,
-                        'fileSize': fileSize,
-                    };
                     console.log('Successfully Uploaded: ', data);
+                    fileUrl = path.resolve(__dirname, fileUrl + '/' + actualName);
+                    console.log('Now File Path: -> ', fileUrl);
                     res.status(200).send({
                         'status': 1,
                         'data': data
