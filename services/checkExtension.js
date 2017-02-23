@@ -1,7 +1,7 @@
 module.exports = (ext) => {
+    let extensionArray = [".jpg", '.png', '.jpeg', '.jifi', ".exif", '.tiff', '.gif', '.bmp', 'jpe', ".bpg", ".bat", ".heif", ".webp", ".ppm", ".pgm", ".pbm", ".pnm"];
     console.log('In Check Extension Function...');
-    if (ext == ".jpg" || ext == '.png' || ext == '.jpeg' || ext == '.jifi' || ext == ".exif" || ext == '.tiff' || ext == '.gif' || ext == '.bmp' ||
-        ext == 'jpe' || ext == ".bpg" || ext == ".bat" || ext == ".heif" || ext == ".webp" || ext == ".ppm" || ext == ".pgm" || ext == ".pbm" || ext == ".pnm") {
-        return 1;
-    } else return 2;
+    if (extensionArray.indexOf(ext) == -1) {
+        return 2;
+    } else return 1;
 }
