@@ -30,16 +30,11 @@ var storage = multer.diskStorage({
         }
     },
     filename: (req, file, cb) => {
-        console.log('In filename', file);
         actualName = file.originalname;
         fileSize = file.size;
         console.log('Filname: ', actualName);
         console.log('fileSize: ', fileSize);
-        let hashText = fileUrl + ':' + (new Date().getTime()).toString() + ':' + file.originalname;
-        console.log('Hash Name: ', hashText);
-        hashEncod = hashFun.encodingFun(hashText) + fileType;
-        console.log('Hash Encoded Text: ', hashEncod);
-        cb(null, hashEncod);
+        cb(null, actualName);
     }
 });
 
@@ -75,10 +70,9 @@ module.exports = {
                     res.send(err);
                 } else {
                     let data = {
-                        'fileName': hashEncod,
+                        'fileName': actualName,
                         'fileType': fileType,
                         'fileSize': fileSize,
-                        'actualFileName': actualName
                     };
                     console.log('Successfully Uploaded: ', data);
                     res.status(200).send({

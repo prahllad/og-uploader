@@ -19,32 +19,21 @@ module.exports = {
             got(link).then(response => {
                     console.log('This Link Valid');
                     if (extCheckingFun(ext)) {
-                        hashText = folderName + '/images/' + ':' + (new Date().getTime()).toString() + ':' + fileName;
-                        console.log('hashText: ', hashText);
-                        hashName = hashFun.encodingFun(hashText);
-                        console.log('HashCode: ', hashName);
                         let uploadPath = path.resolve(__dirname, directoryPath + '/' + folderName + '/images/');
-                        hashName = hashName + ext;
-                        uploadPath = uploadPath + '/' + hashName;
+                        uploadPath = uploadPath + '/' + fileName;
                         got.stream(link).pipe(fs.createWriteStream(uploadPath));
                         resolve({
-                            'fileName': hashName,
+                            'fileName': fileName,
                             'fileType': ext,
-                            'actualFileName': fileName
                         });
                     } else {
                         hashText = folderName + '/documents/' + ':' + (new Date().getTime()).toString() + ':' + fileName;
-                        console.log('hashText: ', hashText);
-                        hashName = hashFun.encodingFun(hashText);
-                        console.log('HashCode: ', hashName);
                         let uploadPath = path.resolve(__dirname, directoryPath + '/' + folderName + '/documents/');
-                        hashName = hashName + ext;
-                        uploadPath = uploadPath + '/' + hashName;
-                        got.stream(link).pipe(fs.createWriteStream(uploadPath + hashName));
+                        uploadPath = uploadPath + '/' + fileName;
+                        got.stream(link).pipe(fs.createWriteStream(uploadPath));
                         resolve({
-                            'fileName': hashName,
+                            'fileName': fileName,
                             'fileType': ext,
-                            'actualFileName': fileName
                         });
                     }
                 })
