@@ -1,6 +1,7 @@
+var path=require('path');
+var request=require('request');
 var bodyParser=require('body-parser');
 var fs=require('fs');
-var S3FS=require('s3fs');
 var multiparty=require('connect-multiparty'),
     multipartyMiddleware=multiparty();
 var AWS = require('aws-sdk');
@@ -20,30 +21,64 @@ var app = express();
 app.use(morgan('dev'));
 app.use(function(req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
+  res.header('Access-Control-Allow-Methods', 'POST');
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
   next();
 });
 app.post('/',multipartyMiddleware,(req,res,next)=>{
-        console.log(req.files.image,req.body.quality,req.files);
-        var file=req.files.image;
-        var compressResult=compresser(file.path,'images/',req.body.quality);
-        compressResult.then((path)=>{
-            console.log(path);
-             var stream = fs.createReadStream(path);
-                var params = {Bucket: 'uploaddata123',Key: file.originalFilename,Body:stream,ACL:"public-read",'Cache-Control':"max-age=1296000"};
-                var options = {partSize: 10 * 1024 * 1024, queueSize: 1};
-                s3.upload(params,options,(err, data)=>{
-                    console.log('error:'+err+"   data:",data);
-                    if(!err){
-                        fs.unlink(path,(err)=>{
-                            res.status(200).send({data:data});
-                        });
-                    }
+        var file={};
+        if(req.body.link){
+            console.log(req.body.link);
+            var filename=path.basename(req.body.link);
+          let writer;
+            request(req.body.link)
+            .pipe(writer=fs.createWriteStream('uploads/'+filename));
+            writer.on("finish",()=>{
+                var compressResult=compresser('uploads/'+filename,'uploads/',req.body.quality);
+                compressResult.then((filepath)=>{
+                    console.log(path.basename(filepath));
+                    var stream = fs.createReadStream(filepath);
+                        var params = {Bucket: 'uploaddata123',Key:path.basename(filepath),Body:stream,ACL:"public-read",'Cache-Control':"max-age=1296000"};
+                        var options = {partSize: 10 * 1024 * 1024, queueSize: 1};
+                        s3.upload(params,options,(err, data)=>{
+                            console.log('error:'+err+"   data:",data);
+                            if(!err){
+                                fs.unlink(filepath,(err)=>{
+                                    res.status(200).send({InkBlob:data});
+                                });
+                            }
+                            else{
+                                res.status(500).send("Unable to upload the file..");
+                            }
+                        })
+                }).catch((err)=>{
+                res.status(500).send('Internal Server :Unable to Compress the image');
                 })
-        }).catch((err)=>{
-            console.log(err);
-            res.end("error");
-        })
+            });
+            
+        }
+        // console.log(req.files.image,req.body.quality,req.files);
+        // var file=req.files.image;
+        // var compressResult=compresser(file.path,'images/',req.body.quality);
+        // compressResult.then((filepath)=>{
+        //     console.log(path.basename(filepath));
+        //      var stream = fs.createReadStream(filepath);
+        //         var params = {Bucket: 'uploaddata123',Key:path.basename(filepath),Body:stream,ACL:"public-read",'Cache-Control':"max-age=1296000"};
+        //         var options = {partSize: 10 * 1024 * 1024, queueSize: 1};
+        //         s3.upload(params,options,(err, data)=>{
+        //             console.log('error:'+err+"   data:",data);
+        //             if(!err){
+        //                 fs.unlink(filepath,(err)=>{
+        //                     res.status(200).send({InkBlob:data});
+        //                 });
+        //             }
+        //             else{
+        //                  res.status(500).send("Unable to upload the file..");
+        //             }
+        //         })
+        // }).catch((err)=>{
+        //    res.status(500).send('Internal Server :Unable to Compress the image');
+        // })
   
 });
 app.use(function(req, res, next) {
