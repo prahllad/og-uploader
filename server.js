@@ -33,6 +33,7 @@ app.post('/',multipartyMiddleware,(req,res,next)=>{
             if(obj=='none'){
                 console.log(req.files.image,req.body.quality,req.files);
                  file=req.files.image;
+                 
             }
             else{
                 file=obj;
@@ -47,7 +48,9 @@ app.post('/',multipartyMiddleware,(req,res,next)=>{
                             console.log('error:'+err+"   data:",data);
                             if(!err){
                                 fs.unlink(filepath,(err)=>{
-                                     res.status(200).send({InkBlob:data,status:1});
+                                    let blob=data;
+                                    blob.filename=file.name;
+                                     res.status(200).send({InkBlob:blob,status:1});
                                 });
                             }
                             else{

@@ -13,7 +13,7 @@ module.exports=function(link){
                 request(link)
                 .pipe(writer=fs.createWriteStream('uploads/'+encoded+filename.ext));
                 writer.on("finish",()=>{
-                    resolve({path:'uploads/'+encoded+filename.ext})
+                    resolve({path:'uploads/'+encoded+filename.ext,name:filename.name+filename.ext})
                 });
                 
             }
