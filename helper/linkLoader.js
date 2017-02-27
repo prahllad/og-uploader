@@ -1,13 +1,15 @@
 var path=require('path');
 var request=require('request');
 var fs=require('fs');
+var base64 = require('base-64');
+var utf8 = require('utf8');
 module.exports=function(link){
     return new Promise((resolve,reject)=>{
             if(link){
+                console.log("In Link statement");
                 var filename=path.parse(link);
-                var base64 = require('base-64');
-                var utf8 = require('utf8');
-                var bytes = utf8.encode(filename.name);
+                let timeStamp=new Date();
+                var bytes = utf8.encode(filename.name+timeStamp.getTime().toString());
                 var encoded = base64.encode(bytes);
                 let writer;
                 request(link)
@@ -18,6 +20,7 @@ module.exports=function(link){
                 
             }
             else{
+                console.log("Without Link");
                 resolve('none');
             }
     })
