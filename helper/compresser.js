@@ -2,14 +2,14 @@
 const imagemin = require('imagemin');
 const imageminMozjpeg = require('imagemin-mozjpeg');
 const imageminPngquant = require('imagemin-pngquant');
- 
+const imageminGifsicle=require('imagemin-gifsicle');
 function compresser(src,dest,quality){
     return new Promise((resolve,reject)=>{
         console.log(quality);
         imagemin([src], dest, {
             plugins: [
-                imageminMozjpeg(),
-                imageminPngquant({quality: quality})
+    
+                imageminMozjpeg({quality:parseInt(quality)}),
             ]
         }).then(files => {
             console.log(files);
