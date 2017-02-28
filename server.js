@@ -1,5 +1,6 @@
 require('./env');
 require('./helper/bucketOps');
+var Promise=require('bluebird');
 
 var express= require('express');
 var morgan = require('morgan');
@@ -17,6 +18,7 @@ AWS.config.update({
     secretAccessKey:process.env.AWS_SECRET_KEY
 });
 var s3 = new AWS.S3();
+var s3Async=Promise.promisifyAll(s3);
 var compresser=require('./helper/compresser');
 var linkLoader=require('./helper/linkLoader');
 var co=require('co');
@@ -41,21 +43,20 @@ app.post('/',multipartyMiddleware,(req,res,next)=>{
             var stream = fs.createReadStream(filepath);
             var params = {Bucket: process.env.BUCKET_NAME,Key:path.basename(filepath),Body:stream,ACL:"public-read",'Cache-Control':"max-age=1296000"};
             var options = {partSize: 10 * 1024 * 1024, queueSize: 1};
-            s3.upload(params,options,(err, data)=>{
-                console.log('error:'+err+"   data:",data);
-                if(!err){
-                    var Blob=data;
-                    Blob.name=file.originalFilename;
-                    fs.unlink(filepath,(err)=>{
-                    res.status(200).send({InkBlob:Blob,status:1});
-                    });
-                }
-                else{
-                    res.status(500).send("Unable to upload the file..");
-                }
-            })
-        }).catch((err)=>{
+            var result =yield s3Async.uploadAsync(params,options);
+            var Blob=result;
+            Blob.name=file.originalFilename;
+            fs.unlinkSync(filepath,(err)=>{
+                if(err)
+                    console.log("Error while unlinking file");
+            });
+            return Blob;
+        }).then((Blob)=>{
+                res.status(200).send({InkBlob:Blob,status:1});
+        })
+        .catch((err)=>{
             console.log(err);
+            res.status(500).send({error:"Error while uploading make sure you are passing required attributes",status:0});
         })       
 });
 app.use(function(req, res, next) {
