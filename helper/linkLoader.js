@@ -15,13 +15,13 @@ module.exports=function(link){
                 request(link)
                 .pipe(writer=fs.createWriteStream('uploads/'+encoded+filename.ext));
                 writer.on("finish",()=>{
-                    resolve({path:'uploads/'+encoded+filename.ext})
+                    resolve({path:'uploads/'+encoded+filename.ext,originalFilename:filename.name+filename.ext})
                 });
                 
             }
             else{
                 console.log("Without Link");
-                resolve('none');
+                resolve({path:'none'});
             }
     })
 }

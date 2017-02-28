@@ -3,7 +3,7 @@ const imagemin = require('imagemin');
 const imageminMozjpeg = require('imagemin-mozjpeg');
 const imageminPngquant = require('imagemin-pngquant');
 const imageminGifsicle=require('imagemin-gifsicle');
-function compresser(src,dest,quality){
+function compresser(src,dest,quality=70){
     return new Promise((resolve,reject)=>{
         console.log(quality);
         imagemin([src], dest, {

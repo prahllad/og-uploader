@@ -1,5 +1,6 @@
-
 require('./env');
+require('./helper/bucketOps');
+
 var express= require('express');
 var morgan = require('morgan');
 var hostname = 'localhost';
@@ -16,30 +17,9 @@ AWS.config.update({
     secretAccessKey:process.env.AWS_SECRET_KEY
 });
 var s3 = new AWS.S3();
-s3.listBuckets(function(err, data) {
-  if (err) console.log(err, err.stack); // an error occurred
-  else  {
-        console.log(data.Buckets); 
-        console.log(data.Buckets.findIndex(fun));
-        if(data.Buckets.findIndex(fun)==-1){
-           var params = {
-                Bucket: process.env.BUCKET_NAME, /* required */
-                ACL: 'public-read',
-            };
-            s3.createBucket(params, function(err, data) {
-            if (err) console.log(err, err.stack); // an error occurred
-            else     console.log(data);           // successful response
-            }); 
-        }
-  }             // successful response
-});
-function fun(ele,index,array){
-    return ele.Name==process.env.BUCKET_NAME;
-    
-}
 var compresser=require('./helper/compresser');
 var linkLoader=require('./helper/linkLoader');
-
+var co=require('co');
 app.use(morgan('dev'));
 app.use(function(req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
@@ -52,32 +32,31 @@ app.post('/',multipartyMiddleware,(req,res,next)=>{
         var file={};
         console.log(req.body.link);
         var quality=req.body.quality;
-        var linkLoaderResult=linkLoader(req.body.link);
-        linkLoaderResult.then((obj)=>{
-        (obj=='none')?file=req.files.image:file=obj;
-            var compressResult=compresser(file.path,'uploads/',quality);
-            compressResult.then((filepath)=>{
-                    console.log(path.basename(filepath));
-                    var stream = fs.createReadStream(filepath);
-                        var params = {Bucket: process.env.BUCKET_NAME,Key:path.basename(filepath),Body:stream,ACL:"public-read",'Cache-Control':"max-age=1296000"};
-                        var options = {partSize: 10 * 1024 * 1024, queueSize: 1};
-                        s3.upload(params,options,(err, data)=>{
-                            console.log('error:'+err+"   data:",data);
-                            if(!err){
-                                fs.unlink(filepath,(err)=>{
-                                     res.status(200).send({InkBlob:data,status:1});
-                                });
-                            }
-                            else{
-                                res.status(500).send("Unable to upload the file..");
-                            }
-                        })
-                }).catch((err)=>{
-                     res.status(500).send('Internal Server :Unable to Compress the image');
-                })
-
-        })
-        
+        co(function *(){
+            var obj=yield linkLoader(req.body.link);
+            (obj.path=='none')?file=req.files.image:file=obj;
+            console.log(file);
+            var filepath=yield compresser(file.path,'uploads/',quality);
+            console.log(filepath);
+            var stream = fs.createReadStream(filepath);
+            var params = {Bucket: process.env.BUCKET_NAME,Key:path.basename(filepath),Body:stream,ACL:"public-read",'Cache-Control':"max-age=1296000"};
+            var options = {partSize: 10 * 1024 * 1024, queueSize: 1};
+            s3.upload(params,options,(err, data)=>{
+                console.log('error:'+err+"   data:",data);
+                if(!err){
+                    var Blob=data;
+                    Blob.name=file.originalFilename;
+                    fs.unlink(filepath,(err)=>{
+                    res.status(200).send({InkBlob:Blob,status:1});
+                    });
+                }
+                else{
+                    res.status(500).send("Unable to upload the file..");
+                }
+            })
+        }).catch((err)=>{
+            console.log(err);
+        })       
 });
 app.use(function(req, res, next) {
   res.status(404).send('Sorry cant find that!');
