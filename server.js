@@ -1,5 +1,5 @@
 require('./env');
-require('./helper/bucketOps');
+require('./AWS/bucketOps');
 var Promise=require('bluebird');
 
 var express= require('express');
@@ -19,8 +19,8 @@ AWS.config.update({
 });
 var s3 = new AWS.S3();
 var s3Async=Promise.promisifyAll(s3);
-var compresser=require('./helper/compresser');
-var linkLoader=require('./helper/linkLoader');
+var compresser=require('./services/compresser');
+var linkLoader=require('./services/linkLoader');
 var co=require('co');
 app.use(morgan('dev'));
 app.use(function(req, res, next) {
